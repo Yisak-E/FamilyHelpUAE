@@ -55,8 +55,21 @@ public class AuthService {
         user.setEmail(request.getEmail());
         user.setPassword( passwordEncoder.encode(request.getPassword()));// encrypt the password
         user.setFamily(family);
+        user.setRole(request.getRole());
 
-        return mapToUserResponse(user);
+        User savedUser = userRepo.save(user);
+
+        return UserResponse.builder()
+                .id(savedUser.getId())
+                .firstName(savedUser.getFirstName())
+                .lastName(savedUser.getLastName())
+                .email(savedUser.getEmail())
+                .role(savedUser.getRole())
+                .familyId(family.getId())
+                .familyName(family.getFamilyName())
+                .reputationScore(family.getReputationScore())
+                .treesPlanted(family.getTreesPlanted())
+                .build();
 
     }
 
@@ -88,19 +101,4 @@ public class AuthService {
 
 
 
-    // helper class
-    private UserResponse mapToUserResponse(User user) {
-        Family family = user.getFamily();
-        return UserResponse.builder()
-                .id(user.getId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .email(user.getEmail())
-                .role(user.getRole())
-                .familyId(family.getId())
-                .familyName(family.getFamilyName())
-                .reputationScore(family.getReputationScore())
-                .treesPlanted(family.getTreesPlanted())
-                .build();
-    }
 }

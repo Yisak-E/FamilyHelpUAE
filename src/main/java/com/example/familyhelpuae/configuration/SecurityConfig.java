@@ -28,7 +28,7 @@ public class SecurityConfig {
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         // Require authentication for all other family support services
-                        .anyRequest().authenticated()
+                        .anyRequest().authenticated() // authenticatedX
                 )
                 // Ensure the system remains stateless as required [cite: 30]
                 .httpBasic(basic -> {});
