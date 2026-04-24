@@ -1,0 +1,28 @@
+$kind: http-request
+name: signUp
+url: http://localhost:8080/api/auth/signup
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"firstName\": \"Yisak\",\r
+
+    \    \"lastName\": \"Metaferiya\",\r
+
+    \    \"email\": \"yisak@example.com\",\r
+
+    \    \"password\": \"Password123\",\r
+
+    \    \"familyName\": \"Metaferiya Family\",\r
+
+    \    \"city\": \"Abu Dhabi\",\r
+
+    \    \"familySize\": 2,\r
+
+    \    \"marriedDate\": \"2026-04-24\"\r
+
+    }"
+auth:
+  type: noauth
+order: 678436278078728
