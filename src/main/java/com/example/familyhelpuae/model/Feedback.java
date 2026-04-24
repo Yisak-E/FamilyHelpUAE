@@ -1,0 +1,21 @@
+package com.example.familyhelpuae.model;
+
+import jakarta.persistence.*;
+
+@Entity
+public class Feedback {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToOne
+    @JoinColumn(name = "task_id")
+    private SupportTask task;
+
+    @ManyToOne
+    @JoinColumn(name = "reviewer_family_id")
+    private Family reviewer;
+
+    private int rating;
+    private String comment;
+}
