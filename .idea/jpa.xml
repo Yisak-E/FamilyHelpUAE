@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PersistenceUnitSettings">
+    <persistence-units>
+      <persistence-unit moduleName="FamilyHelpUAE" name="FamilyHelpUAE" framework="JPA" ormUnit="FamilyHelpUAE:FamilyHelpUAE" defaultDataSourceId="d8a6bd79-f606-4ea1-b3a4-f5801211717b" />
+    </persistence-units>
+  </component>
+</project>
