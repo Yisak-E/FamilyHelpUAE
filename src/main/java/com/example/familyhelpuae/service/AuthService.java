@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
@@ -28,7 +29,8 @@ public class AuthService {
 
     }
 
-    public User signup(SignupRequest request) throws EmailDublicationException {
+    @Transactional
+    public UserResponse signup(SignupRequest request) throws EmailDublicationException {
         User user = new User();
 
         // check the user registered already
@@ -54,9 +56,11 @@ public class AuthService {
         user.setPassword( passwordEncoder.encode(request.getPassword()));// encrypt the password
         user.setFamily(family);
 
-        return user;
+        return mapToUserResponse(user);
 
     }
+
+
 
     public UserResponse login(LoginRequest request) throws UsernameNotFoundException, BadCredentialsException {
          User user = userRepo.findByEmail(request.getEmail())
@@ -80,5 +84,23 @@ public class AuthService {
                  .reputationScore(family.getReputationScore())
                  .treesPlanted(family.getTreesPlanted())
                  .build();
+    }
+
+
+
+    // helper class
+    private UserResponse mapToUserResponse(User user) {
+        Family family = user.getFamily();
+        return UserResponse.builder()
+                .id(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .familyId(family.getId())
+                .familyName(family.getFamilyName())
+                .reputationScore(family.getReputationScore())
+                .treesPlanted(family.getTreesPlanted())
+                .build();
     }
 }

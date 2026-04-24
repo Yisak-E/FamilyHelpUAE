@@ -8,27 +8,32 @@ import com.example.familyhelpuae.exception.EmailDublicationException;
 import com.example.familyhelpuae.model.User;
 import com.example.familyhelpuae.service.AuthService;
 import jakarta.validation.Valid;
-import org.springframework.stereotype.Controller;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
-@Controller
+@RestController
 public class AuthController {
 
-    private AuthService authService;
-    private SignupRequest signupRequest;
+    private final AuthService authService;
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
 
-    @PostMapping("/auth/signup")
-    public User signup( @Valid @RequestBody SignupRequest signupRequest) throws EmailDublicationException {
-        return  authService.signup(signupRequest);
+    @GetMapping("/")
+    public String index() {
+        return "Welcome to Family Help UAE";
     }
 
-    @GetMapping("/auth/login")
-    public UserResponse login(@Valid @RequestBody LoginRequest request ) {
-        return authService.login(request);
+    @PostMapping("/api/auth/signup")
+    public ResponseEntity<UserResponse> signup(@Valid @RequestBody SignupRequest signupRequest) throws EmailDublicationException {
+        return ResponseEntity.ok(authService.signup(signupRequest));
+    }
+
+    @PostMapping("/api/auth/login")
+    public ResponseEntity<UserResponse> login(@Valid @RequestBody LoginRequest request ) {
+        return ResponseEntity.ok(authService.login(request));
     }
 }
