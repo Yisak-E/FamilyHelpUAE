@@ -1,5 +1,8 @@
 package com.example.familyhelpuae.controller;
 
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
 public class RewardController {
     public RewardController() {
         /**
