@@ -4,6 +4,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.*;
 
 @Repository
-interface ReputationHistoryRepository extends JpaRepository<ReputationHistory, Long> {
+public interface ReputationHistoryRepository extends JpaRepository<ReputationHistory, Long> {
 
 }

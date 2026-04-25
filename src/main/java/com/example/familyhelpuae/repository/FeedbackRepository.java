@@ -1,10 +1,10 @@
 package com.example.familyhelpuae.repository;
-import com.example.familyhelpuae.model.SupportTask;
+import com.example.familyhelpuae.model.Feedback;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.*;
 
 @Repository
 
-interface FeedbackRepository extends JpaRepository<SupportTask,Long> {
+public interface FeedbackRepository extends JpaRepository<Feedback,Long> {
 
 }
