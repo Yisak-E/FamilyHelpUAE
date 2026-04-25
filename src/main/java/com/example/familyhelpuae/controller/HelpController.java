@@ -20,12 +20,12 @@ public class HelpController {
     }
 
 
-    @PostMapping("api/help/offer")
+    @PostMapping("/api/help/offer")
     public String offerHelp(){
         helpService.findAll();
         return "this is a help offer call";
     }
-    @PostMapping("api/help/request")
+    @PostMapping("/api/help/request")
     public String requestHelp(){
         return "this is a help request call";
     }
