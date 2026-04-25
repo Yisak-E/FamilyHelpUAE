@@ -5,4 +5,5 @@ import org.springframework.stereotype.*;
 
 @Repository
 public interface HelpOfferRepository extends JpaRepository<HelpOffer, Long> {
+    HelpOffer getById(Long id);
 }

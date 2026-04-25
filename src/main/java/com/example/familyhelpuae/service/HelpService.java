@@ -5,6 +5,7 @@ import com.example.familyhelpuae.model.HelpOffer;
 import com.example.familyhelpuae.model.HelpRequest;
 import com.example.familyhelpuae.repository.HelpOfferRepository;
 import com.example.familyhelpuae.repository.HelpRequestRepository;
+import jakarta.validation.Valid;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -30,4 +31,11 @@ public class HelpService{
     }
 
 
+    public HelpOffer offerHelp(@Valid HelpOffer helpOffer) {
+        return helpOfferRepo.save(helpOffer);
+    }
+
+    public HelpRequest requestHelp(@Valid HelpRequest helpRequest) {
+        return helpRequestRepo.save(helpRequest);
+    }
 }
