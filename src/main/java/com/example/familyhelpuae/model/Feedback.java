@@ -1,8 +1,12 @@
 package com.example.familyhelpuae.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 public class Feedback {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
