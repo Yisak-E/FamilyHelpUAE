@@ -18,17 +18,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuthService {
     private JWTservice jwtService;
-    private UserRepository userRepository;
-    private FamilyRepository familyRepository;
     private UserRepository userRepo;
     private FamilyRepository familyRepo;
     private PasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository, FamilyRepository familyRepository) {
+    public AuthService(UserRepository userRepository, FamilyRepository familyRepository, JWTservice jwtService, PasswordEncoder passwordEncoder) {
         this.userRepo = userRepository;
         this.familyRepo = familyRepository;
         this.passwordEncoder = new BCryptPasswordEncoder();
-        this.jwtService = new JWTservice();
+        this.jwtService = jwtService;
     }
 
     @Transactional
@@ -60,8 +58,10 @@ public class AuthService {
         user.setRole(request.getRole());
 
         User savedUser = userRepo.save(user);
+        String token = jwtService.generateToken(savedUser.getEmail());
 
         return UserResponse.builder()
+                .token(token)
                 .id(savedUser.getId())
                 .firstName(savedUser.getFirstName())
                 .lastName(savedUser.getLastName())

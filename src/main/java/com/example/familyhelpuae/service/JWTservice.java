@@ -3,43 +3,39 @@ package com.example.familyhelpuae.service;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
-
-import java.security.Key;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Service
 public class JWTservice {
+    // Requirement: Secure communication. Use a key at least 256-bit long.
+    private static final String SECRET_STRING = "YourSuperSecretKeyThatMustBeAtLeast32CharactersLong!!";
+    private final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(SECRET_STRING.getBytes(StandardCharsets.UTF_8));
 
-    private static final String JWT_SECRET = "jwt-secret";
-    private static final long JWT_EXPIRATION_TIME = 864_000_000; // 24 hours
-
-    private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(JWT_SECRET.getBytes());
-    }
-
-    public String generateToken(String email){
+    public String generateToken(String email) {
         return Jwts.builder()
-                .setSubject(email)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + JWT_EXPIRATION_TIME))
-                .signWith(getSigningKey())
+                .subject(email) // .setSubject() changed to .subject()
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 86400000)) // 24h
+                .signWith(SECRET_KEY) // Algorithm is now inferred from the key type
                 .compact();
     }
 
-    public String extractEmail(String token){
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+    public String extractEmail(String token) {
+        return Jwts.parser()
+                .verifyWith(SECRET_KEY) // .setSigningKey() changed to .verifyWith()
                 .build()
-                .parseClaimsJws(token)
-                .getBody()
+                .parseSignedClaims(token) // .parseClaimsJws() changed to .parseSignedClaims()
+                .getPayload()
                 .getSubject();
     }
 
-    public boolean isTokenValid(String token){
+    public boolean isTokenValid(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token);
+            Jwts.parser().verifyWith(SECRET_KEY).build().parseSignedClaims(token);
             return true;
-        }catch (Exception e){
+        } catch (Exception e) {
             return false;
         }
     }
