@@ -11,7 +11,7 @@ public class UserResponse {
     private String lastName;
     private String email;
     private String role;
-    
+    private String token;
     // Family context needed for the "trusted community"
     private Long familyId;
     private String familyName;

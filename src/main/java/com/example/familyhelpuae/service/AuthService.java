@@ -17,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
-
+    private JWTservice jwtService;
+    private UserRepository userRepository;
+    private FamilyRepository familyRepository;
     private UserRepository userRepo;
     private FamilyRepository familyRepo;
     private PasswordEncoder passwordEncoder;
@@ -26,7 +28,7 @@ public class AuthService {
         this.userRepo = userRepository;
         this.familyRepo = familyRepository;
         this.passwordEncoder = new BCryptPasswordEncoder();
-
+        this.jwtService = new JWTservice();
     }
 
     @Transactional
@@ -86,7 +88,10 @@ public class AuthService {
 
          Family family = user.getFamily();
 
+         String token = jwtService.generateToken(user.getEmail());
+
          return UserResponse.builder()
+                 .token(token)
                  .id(user.getId())
                  .firstName(user.getFirstName())
                  .lastName(user.getLastName())
