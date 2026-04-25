@@ -1,12 +1,16 @@
 package com.example.familyhelpuae.controller;
 
-import com.example.familyhelpuae.service.AuthService;
+import com.example.familyhelpuae.service.HelpService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RestController;
 
+@RestController
 public class HelpController {
+    private HelpService helpService;
 
-    public HelpController(AuthService authService) {
+    public HelpController( HelpService helpService) {
+        this.helpService =  helpService;
         /**
          * POST /api/help/offer: Create a help offer (e.g., "Offering childcare on Friday").
          * POST /api/help/request: Create a help request (e.g., "Need help with grocery shopping").
@@ -16,19 +20,23 @@ public class HelpController {
     }
 
 
-    @PostMapping("api/help/")
-    public void offerHelp(){
-
+    @PostMapping("api/help/offer")
+    public String offerHelp(){
+        helpService.findAll();
+        return "this is a help offer call";
     }
-    @PostMapping("api/help/")
-    public void requestHelp(){
+    @PostMapping("api/help/request")
+    public String requestHelp(){
+        return "this is a help request call";
     }
 
     @GetMapping("/api/help/search")
-    public void searchHelp(){
+    public String searchHelp(){
+        return "this is search help call";
     }
 
     @GetMapping("/api/help/my-activity")
-    public void myActivityHelp(){
+    public String myActivityHelp(){
+        return "this is my-activity call";
     }
 }

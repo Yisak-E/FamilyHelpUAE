@@ -11,13 +11,6 @@ import java.util.List;
 @Entity
 @Table(name = "families")
 public class Family {
-    public Family() {
-        /*
-         * @Constructor
-         * @Param
-         *document why this constructor is empty
-         */
-    }
     @Getter
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

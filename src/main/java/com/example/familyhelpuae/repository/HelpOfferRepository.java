@@ -4,5 +4,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.*;
 
 @Repository
-interface HelpOfferRepository extends JpaRepository<HelpOffer, Long> {
+public interface HelpOfferRepository extends JpaRepository<HelpOffer, Long> {
 }
