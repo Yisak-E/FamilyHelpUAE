@@ -1,5 +1,4 @@
 $kind: http-request
-name: welcome message
 url: ""
 method: GET
 order: 1777042642669

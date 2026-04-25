@@ -1,8 +1,15 @@
 package com.example.familyhelpuae.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
+@Table(uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"provider_family_id", "serviceCategory", "isActive"})
+})
 public class HelpOffer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
