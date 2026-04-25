@@ -10,7 +10,6 @@ import com.example.familyhelpuae.repository.FamilyRepository;
 import com.example.familyhelpuae.repository.UserRepository;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,10 +21,10 @@ public class AuthService {
     private FamilyRepository familyRepo;
     private PasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository, FamilyRepository familyRepository) {
+    public AuthService(UserRepository userRepository, FamilyRepository familyRepository, PasswordEncoder passwordEncoder) {
         this.userRepo = userRepository;
         this.familyRepo = familyRepository;
-        this.passwordEncoder = new BCryptPasswordEncoder();
+        this.passwordEncoder = passwordEncoder;
 
     }
 

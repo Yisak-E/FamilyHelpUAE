@@ -2,20 +2,19 @@ package com.example.familyhelpuae.configuration;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        // Requirement: Secure password handling
-        return new BCryptPasswordEncoder();
+    private final AuthenticationProvider authenticationProvider;
+
+    public SecurityConfig(AuthenticationProvider authenticationProvider) {
+        this.authenticationProvider = authenticationProvider;
     }
 
     @Bean
@@ -28,9 +27,10 @@ public class SecurityConfig {
                         .requestMatchers("/").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         // Require authentication for all other family support services
-                        .anyRequest().authenticated() // authenticatedX
+                        .anyRequest().authenticated()
                 )
-                // Ensure the system remains stateless as required [cite: 30]
+                .authenticationProvider(authenticationProvider)
+                // Ensure the system remains stateless as required
                 .httpBasic(basic -> {});
 
         return http.build();
