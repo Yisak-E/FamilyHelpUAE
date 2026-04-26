@@ -1,6 +1,7 @@
 package com.example.familyhelpuae.service;
 
 
+import com.example.familyhelpuae.dto.CreateOfferDto;
 import com.example.familyhelpuae.dto.MyActivityResponse;
 import com.example.familyhelpuae.model.Family;
 import com.example.familyhelpuae.model.HelpOffer;
@@ -12,12 +13,12 @@ import com.example.familyhelpuae.repository.HelpRequestRepository;
 import com.example.familyhelpuae.repository.SupportTaskRepository;
 import com.example.familyhelpuae.repository.UserRepository;
 import jakarta.validation.Valid;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Collections;
+
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,17 +48,27 @@ public class HelpService{
     }
 
 
-    public HelpOffer createOffer(HelpOffer newOffer) {
+    public HelpOffer createOffer(@Valid CreateOfferDto createOfferDto, String email) {
+
+        HelpOffer newOffer = new HelpOffer();
         boolean exists = helpOfferRepo.existsByProviderFamily_FamilyNameAndServiceCategoryAndStatus(
-                newOffer.getProviderFamily().getFamilyName(),
-                newOffer.getServiceCategory(),
-                newOffer.getStatus()
+                createOfferDto.getFamilyName(),
+                createOfferDto.getServiceCategory(),
+                createOfferDto.getStatus()
         );
 
         if (exists) {
             throw new IllegalStateException("You already have an active offer for this category!");
         }
-        return helpOfferRepo.save(newOffer);
+                User user =userRepo.findByEmail(email).orElseThrow(()->new IllegalStateException("User not found!"));
+                Family family = user.getFamily();
+
+        newOffer.setDescription(createOfferDto.getDescription());
+        newOffer.setServiceCategory(createOfferDto.getServiceCategory());
+        newOffer.setStatus(createOfferDto.getStatus());
+        newOffer.setProviderFamily(family);
+         helpOfferRepo.save(newOffer);
+         return  newOffer;
     }
 
     public HelpRequest requestHelp(@Valid HelpRequest newRequest) {
