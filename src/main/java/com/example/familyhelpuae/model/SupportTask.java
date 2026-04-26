@@ -1,9 +1,14 @@
 package com.example.familyhelpuae.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
 @Entity
+@Setter
+@Getter
 public class SupportTask {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,5 +24,5 @@ public class SupportTask {
 
     private String status;
     private LocalDateTime createdAt;
-    private LocalDateTime completedAt;
+
 }

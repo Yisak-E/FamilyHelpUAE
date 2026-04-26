@@ -5,9 +5,11 @@ import com.example.familyhelpuae.dto.MyActivityResponse;
 import com.example.familyhelpuae.model.Family;
 import com.example.familyhelpuae.model.HelpOffer;
 import com.example.familyhelpuae.model.HelpRequest;
+import com.example.familyhelpuae.model.SupportTask;
 import com.example.familyhelpuae.model.User;
 import com.example.familyhelpuae.repository.HelpOfferRepository;
 import com.example.familyhelpuae.repository.HelpRequestRepository;
+import com.example.familyhelpuae.repository.SupportTaskRepository;
 import com.example.familyhelpuae.repository.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Service;
@@ -15,17 +17,21 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class HelpService{
     private final HelpRequestRepository helpRequestRepo;
     private final HelpOfferRepository helpOfferRepo;
     private final UserRepository userRepo;
+    private final SupportTaskRepository supportTaskRepo;
 
-    public HelpService(HelpRequestRepository helpRequestRepository, HelpOfferRepository helpOfferRepository, UserRepository userRepo) {
+    public HelpService(HelpRequestRepository helpRequestRepository, HelpOfferRepository helpOfferRepository, UserRepository userRepo, SupportTaskRepository supportTaskRepository) {
         this.helpRequestRepo = helpRequestRepository;
         this.helpOfferRepo = helpOfferRepository;
         this.userRepo = userRepo;
+        this.supportTaskRepo = supportTaskRepository;
     }
 
     public List<HelpRequest> findAll(){
@@ -33,12 +39,16 @@ public class HelpService{
     }
 
     public List<HelpOffer> findAllByHelpRequestId(Long helpRequestId){
-        return helpOfferRepo.findByHelpRequest_Id(Collections.singleton(helpRequestId));
+        // find all support tasks connected to this help request and extract their offers
+        List<SupportTask> tasks = supportTaskRepo.findByRequest_Id(helpRequestId);
+        return tasks.stream()
+                .map(SupportTask::getOffer)
+                .collect(Collectors.toList());
     }
 
 
     public HelpOffer createOffer(HelpOffer newOffer) {
-        boolean exists = helpOfferRepo.existsByProviderFamilyAndServiceCategoryAndStatus(
+        boolean exists = helpOfferRepo.existsByProviderFamily_FamilyNameAndServiceCategoryAndStatus(
                 newOffer.getProviderFamily().getFamilyName(),
                 newOffer.getServiceCategory(),
                 newOffer.getStatus()
@@ -51,7 +61,7 @@ public class HelpService{
     }
 
     public HelpRequest requestHelp(@Valid HelpRequest newRequest) {
-        boolean exists = helpRequestRepo.existsByProviderFamilyAndServiceCategoryAndStatus(
+        boolean exists = helpRequestRepo.existsByRequesterFamily_FamilyNameAndCategoryAndStatus(
                 newRequest.getRequesterFamily().getFamilyName(),
                 newRequest.getCategory(),
                 newRequest.getStatus()
