@@ -1,5 +1,6 @@
 package com.example.familyhelpuae.controller;
 
+import com.example.familyhelpuae.dto.CreateOfferDto;
 import com.example.familyhelpuae.dto.MyActivityResponse;
 import com.example.familyhelpuae.model.HelpOffer;
 import com.example.familyhelpuae.model.HelpRequest;
@@ -32,8 +33,8 @@ public class HelpController {
 
 
     @PostMapping("/api/help/offer")
-    public ResponseEntity<HelpOffer> createOffer(@Valid @RequestBody HelpOffer helpOffer) {
-        return new ResponseEntity<>(helpService.createOffer(helpOffer), HttpStatus.CREATED);
+    public ResponseEntity<HelpOffer> createOffer(@Valid @RequestBody CreateOfferDto helpOffer, Principal principal) {
+        return new ResponseEntity<>(helpService.createOffer(helpOffer, principal.getName()), HttpStatus.CREATED);
     }
     @PostMapping("/api/help/request")
     public ResponseEntity<HelpRequest> requestHelp(@Valid @RequestBody HelpRequest helpRequest) {
