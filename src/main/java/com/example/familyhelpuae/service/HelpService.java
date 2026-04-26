@@ -1,10 +1,14 @@
 package com.example.familyhelpuae.service;
 
 
+import com.example.familyhelpuae.dto.MyActivityResponse;
+import com.example.familyhelpuae.model.Family;
 import com.example.familyhelpuae.model.HelpOffer;
 import com.example.familyhelpuae.model.HelpRequest;
+import com.example.familyhelpuae.model.User;
 import com.example.familyhelpuae.repository.HelpOfferRepository;
 import com.example.familyhelpuae.repository.HelpRequestRepository;
+import com.example.familyhelpuae.repository.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Service;
 
@@ -16,10 +20,12 @@ import java.util.List;
 public class HelpService{
     private final HelpRequestRepository helpRequestRepo;
     private final HelpOfferRepository helpOfferRepo;
+    private final UserRepository userRepo;
 
-    public HelpService(HelpRequestRepository helpRequestRepository, HelpOfferRepository helpOfferRepository) {
+    public HelpService(HelpRequestRepository helpRequestRepository, HelpOfferRepository helpOfferRepository, UserRepository userRepo) {
         this.helpRequestRepo = helpRequestRepository;
         this.helpOfferRepo = helpOfferRepository;
+        this.userRepo = userRepo;
     }
 
     public List<HelpRequest> findAll(){
@@ -27,15 +33,73 @@ public class HelpService{
     }
 
     public List<HelpOffer> findAllByHelpRequestId(Long helpRequestId){
-        return helpOfferRepo.findAllById(Collections.singleton(helpRequestId));
+        return helpOfferRepo.findByHelpRequest_Id(Collections.singleton(helpRequestId));
     }
 
 
-    public HelpOffer offerHelp(@Valid HelpOffer helpOffer) {
-        return helpOfferRepo.save(helpOffer);
+    public HelpOffer createOffer(HelpOffer newOffer) {
+        boolean exists = helpOfferRepo.existsByProviderFamilyAndServiceCategoryAndStatus(
+                newOffer.getProviderFamily().getFamilyName(),
+                newOffer.getServiceCategory(),
+                newOffer.getStatus()
+        );
+
+        if (exists) {
+            throw new IllegalStateException("You already have an active offer for this category!");
+        }
+        return helpOfferRepo.save(newOffer);
     }
 
-    public HelpRequest requestHelp(@Valid HelpRequest helpRequest) {
-        return helpRequestRepo.save(helpRequest);
+    public HelpRequest requestHelp(@Valid HelpRequest newRequest) {
+        boolean exists = helpRequestRepo.existsByProviderFamilyAndServiceCategoryAndStatus(
+                newRequest.getRequesterFamily().getFamilyName(),
+                newRequest.getCategory(),
+                newRequest.getStatus()
+        );
+
+        if(exists){
+            throw new IllegalStateException("You already have an active request for this category!");
+        }
+
+        return helpRequestRepo.save(newRequest);
+    }
+
+    public List<MyActivityResponse> getMyActivity(String email) {
+        List<MyActivityResponse> myActivities = new ArrayList<>();
+
+        User user = userRepo.findByEmail(email).orElseThrow(()->new IllegalStateException("User not found!"));
+
+        Family family = user.getFamily();
+        // get my activity by family id for help offer
+        List<HelpOffer> offers = helpOfferRepo.findByProviderFamily(family);
+        for (HelpOffer offer : offers) {
+            myActivities.add(MyActivityResponse.builder()
+                            .type("OFFER")
+                            .id(offer.getId())
+                            .category(offer.getServiceCategory())
+                            .status(offer.getStatus())
+                            .description(offer.getDescription())
+                            .familyName(family.getFamilyName())
+                    .build());
+        }
+
+        // get my activity by family id for help request
+
+        List<HelpRequest> requests = helpRequestRepo.findByRequesterFamily(family);
+
+        for(HelpRequest request : requests){
+            myActivities.add(MyActivityResponse.builder()
+                            .type("REQUEST")
+                            .id(request.getId())
+                            .category(request.getCategory())
+                            .status(request.getStatus())
+                            .familyName(family.getFamilyName())
+                            .description(request.getDetails())
+                    .build());
+        }
+
+
+        return myActivities;
+
     }
 }

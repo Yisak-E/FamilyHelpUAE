@@ -1,5 +1,6 @@
 package com.example.familyhelpuae.controller;
 
+import com.example.familyhelpuae.dto.MyActivityResponse;
 import com.example.familyhelpuae.model.HelpOffer;
 import com.example.familyhelpuae.model.HelpRequest;
 import com.example.familyhelpuae.service.HelpService;
@@ -11,6 +12,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.security.Principal;
+import java.util.List;
 
 @RestController
 public class HelpController {
@@ -28,8 +32,8 @@ public class HelpController {
 
 
     @PostMapping("/api/help/offer")
-    public ResponseEntity<HelpOffer> offerHelp(@Valid @RequestBody HelpOffer helpOffer) {
-        return new ResponseEntity<>(helpService.offerHelp(helpOffer), HttpStatus.CREATED);
+    public ResponseEntity<HelpOffer> createOffer(@Valid @RequestBody HelpOffer helpOffer) {
+        return new ResponseEntity<>(helpService.createOffer(helpOffer), HttpStatus.CREATED);
     }
     @PostMapping("/api/help/request")
     public ResponseEntity<HelpRequest> requestHelp(@Valid @RequestBody HelpRequest helpRequest) {
@@ -37,12 +41,12 @@ public class HelpController {
     }
 
     @GetMapping("/api/help/search")
-    public String searchHelp(){
-        return "this is search help call";
+    public ResponseEntity<List<HelpRequest>> searchHelp(){
+        return  new ResponseEntity<>(helpService.findAll(), HttpStatus.OK);
     }
 
     @GetMapping("/api/help/my-activity")
-    public String myActivityHelp(){
-        return "this is my-activity call";
+    public ResponseEntity<List<MyActivityResponse>> getMyActivity(Principal principal){
+        return new ResponseEntity<List<MyActivityResponse>>(helpService.getMyActivity(principal.getName()), HttpStatus.OK);
     }
 }

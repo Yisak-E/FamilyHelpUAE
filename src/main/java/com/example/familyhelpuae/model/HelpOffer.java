@@ -8,7 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"provider_family_id", "serviceCategory", "isActive"})
+        @UniqueConstraint(columnNames = {"provider_family_id", "serviceCategory", "status"})
 })
 public class HelpOffer {
     @Id
@@ -21,5 +21,5 @@ public class HelpOffer {
 
     private String serviceCategory;
     private String description;
-    private boolean isActive = true;
+    private String status = "AVAILABLE";
 }
