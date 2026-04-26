@@ -5,15 +5,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.*;
 
 import java.util.List;
-import java.util.Set;
 
 @Repository
 public interface HelpOfferRepository extends JpaRepository<HelpOffer, Long> {
-    HelpOffer getById(Long id);
+    // check by provider family name + category + status
+    boolean existsByProviderFamily_FamilyNameAndServiceCategoryAndStatus(String familyName, String serviceCategory, String status);
 
-    boolean existsByProviderFamilyAndServiceCategoryAndStatus(String providerFamilyId, String serviceCategory,  String Status);
-
+    // find offers by provider family
     List<HelpOffer> findByProviderFamily(Family family);
-
-    List<HelpOffer> findByHelpRequest_Id(Set<Long> singleton);
 }
