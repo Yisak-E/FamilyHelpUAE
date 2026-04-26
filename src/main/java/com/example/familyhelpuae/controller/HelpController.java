@@ -48,6 +48,6 @@ public class HelpController {
 
     @GetMapping("/api/help/my-activity")
     public ResponseEntity<List<MyActivityResponse>> getMyActivity(Principal principal){
-        return new ResponseEntity<List<MyActivityResponse>>(helpService.getMyActivity(principal.getName()), HttpStatus.OK);
+        return new ResponseEntity<>(helpService.getMyActivity(principal.getName()), HttpStatus.OK);
     }
 }
