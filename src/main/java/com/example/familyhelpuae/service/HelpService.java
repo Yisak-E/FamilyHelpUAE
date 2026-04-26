@@ -13,7 +13,6 @@ import com.example.familyhelpuae.repository.HelpRequestRepository;
 import com.example.familyhelpuae.repository.SupportTaskRepository;
 import com.example.familyhelpuae.repository.UserRepository;
 import jakarta.validation.Valid;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
