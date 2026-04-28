@@ -23,6 +23,6 @@ public class HelpRequest {
 
     private String category;
     private String details;
-    private String urgency;
+    private String urgent;
     private String status = "OPEN";
 }
