@@ -26,7 +26,6 @@ public class RewardService {
                             .familyName(family.getFamilyName())
                             .reputationScore(family.getReputationScore())
                             .completedInteractions(family.getCompletedInteractions())
-                            .treesPlanted(family.getTreesPlanted())
                             .build()
             );
         }
