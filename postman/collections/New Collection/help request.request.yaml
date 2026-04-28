@@ -1,0 +1,22 @@
+$kind: http-request
+name: help request
+url: http://localhost:8080/api/help/request
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \     \"familyName\": \"Metaferiya Family\",\r
+
+    \    \"category\": \"School k\",\r
+
+    \    \"details\": \"Need  Tuesday morning.\",\r
+
+    \    \"status\": \"OPEN\"\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJ5aXNha21ldEBnbWFpbC5jb20iLCJpYXQiOjE3NzcyMDA1NjgsImV4cCI6MTc3NzI4Njk2OH0.5tE9uKqJ9WXpwVhTAv-I34hIlYQASjPr-RR6XSFHbvlrbYHWx8bh8zhXCAwgJ1HA
+order: 4487595533196242
