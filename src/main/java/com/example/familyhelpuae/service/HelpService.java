@@ -2,6 +2,7 @@ package com.example.familyhelpuae.service;
 
 
 import com.example.familyhelpuae.dto.CreateOfferDto;
+import com.example.familyhelpuae.dto.CreateRequestDto;
 import com.example.familyhelpuae.dto.MyActivityResponse;
 import com.example.familyhelpuae.model.Family;
 import com.example.familyhelpuae.model.HelpOffer;
@@ -70,18 +71,29 @@ public class HelpService{
          return  newOffer;
     }
 
-    public HelpRequest requestHelp(@Valid HelpRequest newRequest) {
+    public HelpRequest requestHelp(@Valid CreateRequestDto createRequestDto, String email) {
+        HelpRequest newRequest = new HelpRequest();
+
         boolean exists = helpRequestRepo.existsByRequesterFamily_FamilyNameAndCategoryAndStatus(
-                newRequest.getRequesterFamily().getFamilyName(),
-                newRequest.getCategory(),
-                newRequest.getStatus()
+                createRequestDto.getFamilyName(),
+                createRequestDto.getCategory(),
+                createRequestDto.getStatus()
         );
 
         if(exists){
             throw new IllegalStateException("You already have an active request for this category!");
         }
 
-        return helpRequestRepo.save(newRequest);
+        User user =userRepo.findByEmail(email).orElseThrow(()->new IllegalStateException("User not found!"));
+        Family family = user.getFamily();
+
+        newRequest.setCategory(createRequestDto.getCategory());
+        newRequest.setStatus(createRequestDto.getStatus());
+        newRequest.setRequesterFamily(family);
+        newRequest.setUrgent(createRequestDto.getUrgent());
+        helpRequestRepo.save(newRequest);
+
+        return newRequest;
     }
 
     public List<MyActivityResponse> getMyActivity(String email) {
