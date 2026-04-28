@@ -42,7 +42,6 @@ public class AuthService {
                     newFamily.setCity(request.getCity());
                     newFamily.setSize(1);
                     newFamily.setReputationScore(0); // Initialize default values
-                    newFamily.setTreesPlanted(0);
                     return familyRepo.save(newFamily);
                 });
 
@@ -95,7 +94,6 @@ public class AuthService {
                 .familyId(family.getId())
                 .familyName(family.getFamilyName())
                 .reputationScore(family.getReputationScore())
-                .treesPlanted(family.getTreesPlanted())
                 .build();
     }
 }

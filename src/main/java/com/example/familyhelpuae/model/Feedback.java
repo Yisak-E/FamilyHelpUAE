@@ -20,6 +20,11 @@ public class Feedback {
     @JoinColumn(name = "reviewer_family_id")
     private Family reviewer;
 
+
+    @ManyToOne
+    @JoinColumn(name = "reviewed_family_id")
+    private Family reviewedFamily;
+
     private int rating;
     private String comment;
 }

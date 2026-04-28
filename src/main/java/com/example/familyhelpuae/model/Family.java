@@ -41,7 +41,7 @@ public class Family {
   
     private int completedInteractions = 0;
   
-    private int treesPlanted = 0;
+
 
   
     @Version

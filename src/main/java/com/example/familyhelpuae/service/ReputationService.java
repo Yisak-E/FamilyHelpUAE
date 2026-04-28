@@ -24,14 +24,9 @@ public class ReputationService {
                 .orElseThrow(() -> new RuntimeException("Family not found: " + familyId));
 
         // 1. Increment Reputation Score (representing tasks completed)
-        int currentScore = family.getReputationScore() != null ? family.getReputationScore() : 0;
+        double currentScore = family.getReputationScore();
         family.setReputationScore(currentScore + 1);
 
-        // 2. Logic for Tree Planting: Every 5 successful feedbacks, plant a tree
-        if (family.getReputationScore() % 5 == 0) {
-            int trees = family.getTreesPlanted() != null ? family.getTreesPlanted() : 0;
-            family.setTreesPlanted(trees + 1);
-        }
 
         familyRepository.save(family);
     }
