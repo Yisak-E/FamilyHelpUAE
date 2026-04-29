@@ -1,54 +1,50 @@
 package com.example.familyhelpuae.controller;
 
-import com.example.familyhelpuae.dto.CreateOfferDto;
-import com.example.familyhelpuae.dto.CreateRequestDto;
-import com.example.familyhelpuae.dto.MyActivityResponse;
-import com.example.familyhelpuae.model.HelpOffer;
-import com.example.familyhelpuae.model.HelpRequest;
+import com.example.familyhelpuae.dto.CreatePostDto;
+import com.example.familyhelpuae.model.CommunityPost;
 import com.example.familyhelpuae.service.HelpService;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
 
 @RestController
+@RequestMapping("/api/help")
+@RequiredArgsConstructor
 public class HelpController {
-    private HelpService helpService;
 
-    public HelpController( HelpService helpService) {
-        this.helpService =  helpService;
-        /**
-         * POST /api/help/offer: Create a help offer (e.g., "Offering childcare on Friday").
-         * POST /api/help/request: Create a help request (e.g., "Need help with grocery shopping").
-         * GET /api/help/search: Search for available offers/requests in a specific city (e.g., Abu Dhabi).
-         * GET /api/help/my-activity: List all posts created by logged-in user
-         */
+    private final HelpService helpService;
+
+    /**
+     * 1. Get posts (Handles "ALL", "OFFER", or "SEEK" via the ?type parameter)
+     * Example: GET /api/help/posts?type=OFFER
+     */
+    @GetMapping("/posts")
+    public ResponseEntity<List<CommunityPost>> getPosts(@RequestParam(required = false) String type) {
+        return ResponseEntity.ok(helpService.getPosts(type));
     }
 
+    /**
+     * 2. Create a new post (Handles both Offers and Requests in one payload)
+     */
+    @PostMapping("/posts")
+    public ResponseEntity<CommunityPost> createPost(
+            @Valid @RequestBody CreatePostDto createPostDto,
+            Principal principal) {
 
-    @PostMapping("/api/help/offer")
-    public ResponseEntity<HelpOffer> createOffer(@Valid @RequestBody CreateOfferDto helpOffer, Principal principal) {
-        return new ResponseEntity<>(helpService.createOffer(helpOffer, principal.getName()), HttpStatus.CREATED);
-    }
-    @PostMapping("/api/help/request")
-    public ResponseEntity<HelpRequest> requestHelp(@Valid @RequestBody CreateRequestDto helpRequest, Principal principal) {
-        return new  ResponseEntity<>(helpService.requestHelp(helpRequest, principal.getName()), HttpStatus.CREATED);
-    }
-
-    @GetMapping("/api/help/search")
-    public ResponseEntity<List<HelpRequest>> searchHelp(){
-        return  new ResponseEntity<>(helpService.findAll(), HttpStatus.OK);
+        // principal.getName() extracts the email from your JWT token
+        CommunityPost createdPost = helpService.createPost(createPostDto, principal.getName());
+        return ResponseEntity.ok(createdPost);
     }
 
-    @GetMapping("/api/help/my-activity")
-    public ResponseEntity<List<MyActivityResponse>> getMyActivity(Principal principal){
-        return new ResponseEntity<>(helpService.getMyActivity(principal.getName()), HttpStatus.OK);
+    /**
+     * 3. Get my activities (Finds all posts made by the logged-in family)
+     */
+    @GetMapping("/my-activity")
+    public ResponseEntity<List<CommunityPost>> getMyActivities(Principal principal) {
+        return ResponseEntity.ok(helpService.getMyPosts(principal.getName()));
     }
 }

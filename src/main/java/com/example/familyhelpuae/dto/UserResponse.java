@@ -12,9 +12,8 @@ public class UserResponse {
     private String email;
     private String role;
     private String token;
-    // Family context needed for the "trusted community"
+
     private Long familyId;
     private String familyName;
     private double reputationScore;
-    private int treesPlanted;
 }

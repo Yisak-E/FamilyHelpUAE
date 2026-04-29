@@ -1,4 +1,4 @@
-package com.example.familyhelpuae.configuration; // or .service
+package com.example.familyhelpuae.configuration;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -25,7 +25,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        
+
+        // 1. ADD THIS BYPASS BLOCK: Immediately let auth routes and OPTIONS pass through
+        if (request.getServletPath().contains("/api/auth") || request.getMethod().equals("OPTIONS")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String userEmail;

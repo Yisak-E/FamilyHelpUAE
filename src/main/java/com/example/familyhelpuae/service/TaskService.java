@@ -1,98 +1,74 @@
 package com.example.familyhelpuae.service;
 
-import com.example.familyhelpuae.model.HelpOffer;
-import com.example.familyhelpuae.model.HelpRequest;
-import com.example.familyhelpuae.model.SupportTask;
-import com.example.familyhelpuae.repository.HelpOfferRepository;
-import com.example.familyhelpuae.repository.HelpRequestRepository;
-import com.example.familyhelpuae.repository.SupportTaskRepository;
+import com.example.familyhelpuae.model.CommunityPost;
+import com.example.familyhelpuae.model.TaskTransaction;
+import com.example.familyhelpuae.repository.CommunityPostRepository;
+import com.example.familyhelpuae.repository.TaskTransactionRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
 @Service
+@RequiredArgsConstructor
 public class TaskService {
-    private final SupportTaskRepository supportTaskRepo;
-    private final HelpOfferRepository helpOfferRepo;
-    private final HelpRequestRepository helpRequestRepo;
 
-    public TaskService(SupportTaskRepository supportTaskRepo,
-                       HelpOfferRepository helpOfferRepo,
-                       HelpRequestRepository helpRequestRepo) {
-        this.supportTaskRepo = supportTaskRepo;
-        this.helpOfferRepo = helpOfferRepo;
-        this.helpRequestRepo = helpRequestRepo;
-    }
+    private final TaskTransactionRepository taskTransactionRepository;
+    private final CommunityPostRepository communityPostRepository;
 
-    /**
-     * Accepts a help request and links it to a help offer.
-     * This effectively "answers" a request from another family.
-     */
     @Transactional
-    public SupportTask acceptTask(String helpRequestId, Long helpOfferId) {
-        // 1. Find the Help Request (The family needing help)
-        HelpRequest helpRequest = helpRequestRepo.findById(Long.parseLong(helpRequestId))
-                .orElseThrow(() -> new RuntimeException("Help Request not found: " + helpRequestId));
+    public TaskTransaction acceptTask(Long postId) {
+        CommunityPost post = communityPostRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Community post not found"));
 
-        // 2. Find the Help Offer (The family providing help)
-        HelpOffer helpOffer = helpOfferRepo.findById(helpOfferId)
-                .orElseThrow(() -> new RuntimeException("Help Offer not found: " + helpOfferId));
-
-        // 3. Logic Check: Ensure request is still "Open"
-        if (!helpRequest.getStatus().equalsIgnoreCase("open")) {
-            throw new RuntimeException("This help request is no longer available.");
+        if (!post.getStatus().equals("OPEN")) {
+            throw new RuntimeException("This post is no longer available.");
         }
 
-        // 4. Update the Request Status
-        helpRequest.setStatus("ACCEPTED");
-        helpRequestRepo.save(helpRequest);
+        // 1. Update the Post status so others can't accept it
+        post.setStatus("IN_PROGRESS");
+        communityPostRepository.save(post);
 
-        // 5. Create and link the SupportTask based on your model
-        SupportTask task = new SupportTask();
-        task.setRequest(helpRequest); // Set the @ManyToOne link to Request
-        task.setOffer(helpOffer);     // Set the @ManyToOne link to Offer
-        task.setStatus("IN_PROGRESS");
-        task.setCreatedAt(LocalDateTime.now());
+        // 2. Create the Task Transaction tracking record
+        TaskTransaction transaction = new TaskTransaction();
+        transaction.setPost(post);
+        transaction.setStatus("ACCEPTED");
+        transaction.setCreatedAt(LocalDateTime.now());
+        transaction.setUpdatedAt(LocalDateTime.now());
 
-        return supportTaskRepo.save(task);
+        return taskTransactionRepository.save(transaction);
     }
 
-    /**
-     * Completes the task and closes the request.
-     */
     @Transactional
-    public SupportTask completeTask(String taskId) {
-        SupportTask task = supportTaskRepo.findById(Long.parseLong(taskId))
-                .orElseThrow(() -> new RuntimeException("Task not found: " + taskId));
+    public TaskTransaction completeTask(Long postId) {
+        // Automatically finds the active task using the Post ID!
+        TaskTransaction transaction = taskTransactionRepository.findFirstByPostIdOrderByCreatedAtDesc(postId)
+                .orElseThrow(() -> new RuntimeException("Active task not found for this post"));
 
-        task.setStatus("COMPLETED");
+        transaction.setStatus("COMPLETED");
+        transaction.setUpdatedAt(LocalDateTime.now());
 
-        // Mark the linked request as closed
-        if (task.getRequest() != null) {
-            task.getRequest().setStatus("CLOSED");
-            helpRequestRepo.save(task.getRequest());
-        }
+        CommunityPost post = transaction.getPost();
+        post.setStatus("COMPLETED");
+        communityPostRepository.save(post);
 
-        return supportTaskRepo.save(task);
+        return taskTransactionRepository.save(transaction);
     }
 
-    /**
-     * Cancels the task and re-opens the request for others.
-     */
     @Transactional
-    public SupportTask cancelTask(String taskId) {
-        SupportTask task = supportTaskRepo.findById(Long.parseLong(taskId))
-                .orElseThrow(() -> new RuntimeException("Task not found: " + taskId));
+    public TaskTransaction cancelTask(Long postId) {
+        TaskTransaction transaction = taskTransactionRepository.findFirstByPostIdOrderByCreatedAtDesc(postId)
+                .orElseThrow(() -> new RuntimeException("Active task not found for this post"));
 
-        task.setStatus("CANCELLED");
+        transaction.setStatus("CANCELLED");
+        transaction.setUpdatedAt(LocalDateTime.now());
 
-        // Re-open the request
-        if (task.getRequest() != null) {
-            task.getRequest().setStatus("OPEN");
-            helpRequestRepo.save(task.getRequest());
-        }
+        CommunityPost post = transaction.getPost();
+        post.setStatus("OPEN");
+        communityPostRepository.save(post);
 
-        return supportTaskRepo.save(task);
+        return taskTransactionRepository.save(transaction);
     }
+
 }

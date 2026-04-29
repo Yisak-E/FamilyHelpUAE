@@ -39,7 +39,6 @@ public class AuthService {
                 .orElseGet(() -> {
                     Family newFamily = new Family();
                     newFamily.setFamilyName(request.getFamilyName());
-                    newFamily.setCity(request.getCity());
                     newFamily.setSize(1);
                     newFamily.setReputationScore(0); // Initialize default values
                     return familyRepo.save(newFamily);
@@ -51,7 +50,6 @@ public class AuthService {
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFamily(family);
-        user.setRole(request.getRole());
 
         User savedUser = userRepo.save(user);
         String token = jwtService.generateToken(savedUser.getEmail());
@@ -90,7 +88,6 @@ public class AuthService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .email(user.getEmail())
-                .role(user.getRole())
                 .familyId(family.getId())
                 .familyName(family.getFamilyName())
                 .reputationScore(family.getReputationScore())

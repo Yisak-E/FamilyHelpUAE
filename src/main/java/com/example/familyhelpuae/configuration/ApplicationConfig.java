@@ -31,14 +31,12 @@ public class ApplicationConfig {
             User user = repository.findByEmail(username)
                     .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-            // Map domain user role(s) to GrantedAuthority. If role is null, default to ROLE_USER
-            String role = user.getRole() != null ? user.getRole() : "ROLE_USER";
-            List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(role));
-
+            // Map domain user role(s) to GrantedAuthority.
+            String role = "ROLE_USER";
             return new org.springframework.security.core.userdetails.User(
                     user.getEmail(),
                     user.getPassword(),
-                    authorities
+                    Collections.singletonList(new SimpleGrantedAuthority(role))
             );
         };
     }
