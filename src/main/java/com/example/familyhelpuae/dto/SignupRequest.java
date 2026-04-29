@@ -2,12 +2,10 @@ package com.example.familyhelpuae.dto;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;
-import java.util.Date;
 
 @Data
 public class SignupRequest {
 
-    // User Validation
     @NotBlank(message = "First name is required")
     private String firstName;
 
@@ -27,20 +25,14 @@ public class SignupRequest {
     @NotBlank(message = "Role is required")
     private String role;
 
-    // Family Validation
     @NotBlank(message = "Family name is required")
     @Size(min = 3, message = "Family name must be at least 3 characters")
     private String familyName;
 
-    @NotBlank(message = "City is required")
-    private String city;
-
-
+    // CHANGED: city to address to match Family.java
+    @NotBlank(message = "Address is required")
+    private String address;
 
     @Min(value = 1, message = "Family size must be at least 1")
     private int familySize;
-
-    @NotNull(message = "Married date is required")
-    @PastOrPresent(message = "Married date cannot be in the future")
-    private Date marriedDate;
 }

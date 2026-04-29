@@ -27,23 +27,12 @@ public class Family {
   
     @Column(unique = true, nullable = false)
     private String familyName;
-  
-    private String city;
 
-  
     private int size;
-  
-    private Date marriedDate;
-  
-    private String marriedCountry;
-  
-    private double reputationScore = 5.0;
-  
+    private double reputationScore = 0.0;
     private int completedInteractions = 0;
-  
+    private String address;
 
-
-  
     @Version
     private Long version;
 
