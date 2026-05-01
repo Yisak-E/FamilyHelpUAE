@@ -5,15 +5,10 @@ import com.example.familyhelpuae.model.CommunityPost;
 import com.example.familyhelpuae.model.Family;
 import com.example.familyhelpuae.model.User;
 import com.example.familyhelpuae.repository.CommunityPostRepository;
-import com.example.familyhelpuae.repository.UserRepository;
-import com.example.familyhelpuae.specification.CommunityPostSpecifications;
+import com.example.familyhelpuae.repository.UserRepository; // Assuming you use this to get the Family
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -21,73 +16,51 @@ import java.util.List;
 public class HelpService {
 
     private final CommunityPostRepository postRepository;
-    private final UserRepository userRepository; // Injected to find the logged-in user
+    private final UserRepository userRepository;
 
-    @Cacheable(value = "communityFeed", key = "{#type, #category, #status}")
-    public List<CommunityPost> getFilteredPosts(String type, String category, String status) {
-        Specification<CommunityPost> spec = CommunityPostSpecifications.withFilters(type, category, status);
-        return postRepository.findAll(spec);
-    }
-
-    // When a new post is created, we clear the feed cache so users see the new data
-    @CacheEvict(value = "communityFeed", allEntries = true)
-    public CommunityPost createPost(CreatePostDto dto, String email) {
-        // 1. Find the user making the request
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // 2. Get their associated family
-        Family family = user.getFamily();
-        if (family == null) {
-            throw new RuntimeException("User does not belong to a registered family");
-        }
-
-        // 3. Map DTO to Entity
-        CommunityPost post = new CommunityPost();
-        post.setTitle(dto.getTitle());
-        post.setDescription(dto.getDescription());
-        post.setCategory(dto.getCategory());
-        post.setPostType(dto.getPostType()); // e.g., SEEK or OFFER
-        post.setUrgency(dto.getUrgency());
-        post.setNeededBy(dto.getNeededBy());
-
-        // 4. Set system defaults
-        post.setStatus("OPEN");
-        post.setCreatedAt(LocalDateTime.now());
-        post.setFamily(family);
-
-        // 5. Save and return
-        return postRepository.save(post);
-    }
-
+    /**
+     * Fetches posts based on the type requested from the frontend.
+     */
     public List<CommunityPost> getPosts(String type) {
-        // If a type is provided (SEEK/OFFER), filter by it. Otherwise, return all OPEN posts.
-        return getFilteredPosts(type, null, "OPEN");
+        if (type == null || type.isBlank() || type.equalsIgnoreCase("ALL")) {
+            return postRepository.findAllByOrderByCreatedAtDesc();
+        }
+        return postRepository.findByPostTypeOrderByCreatedAtDesc(type.toUpperCase());
     }
 
-    public List<CommunityPost> getMyPosts(String email) {
-        // Find the user to get their family ID
-        User user = userRepository.findByEmail(email)
+    /**
+     * Creates a new Community Post (either OFFER or SEEK)
+     */
+    public CommunityPost createPost(CreatePostDto dto, String userEmail) {
+        // Find the user making the request to attach their Family
+        User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        Family family = user.getFamily();
 
-        // Return all posts created by this family
-        // Note: You will need to add findByFamilyIdOrderByCreatedAtDesc in your repository interface
-        return postRepository.findByFamilyIdOrderByCreatedAtDesc(user.getFamily().getId());
-    }
+        CommunityPost post = new CommunityPost();
+        post.setFamily(family);
+        post.setPostType(dto.getPostType().toUpperCase());
+        post.setTitle(dto.getTitle());
+        post.setCategory(dto.getCategory().toLowerCase());
+        post.setDescription(dto.getDescription());
 
-    // Bonus: The method to mark a task as completed (closes the loop!)
-    @CacheEvict(value = "communityFeed", allEntries = true)
-    public CommunityPost completeTask(Long postId, String email) {
-        CommunityPost post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
-
-        // Security check: Only the family who created the post can mark it as complete
-        User user = userRepository.findByEmail(email).orElseThrow();
-        if (!post.getFamily().getId().equals(user.getFamily().getId())) {
-            throw new RuntimeException("Not authorized to complete this task");
+        // Handle specific fields based on the type
+        if ("SEEK".equalsIgnoreCase(post.getPostType())) {
+            post.setUrgency(dto.getUrgency());
+            post.setNeededBy(dto.getNeededBy());
+        } else if ("OFFER".equalsIgnoreCase(post.getPostType())) {
+            post.setAvailability(dto.getAvailability());
         }
 
-        post.setStatus("COMPLETED");
         return postRepository.save(post);
+    }
+
+    /**
+     * Fetches "My Activities" for the logged-in user
+     */
+    public List<CommunityPost> getMyPosts(String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return postRepository.findByFamilyIdOrderByCreatedAtDesc(user.getFamily().getId());
     }
 }
