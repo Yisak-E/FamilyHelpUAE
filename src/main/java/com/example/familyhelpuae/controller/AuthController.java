@@ -1,10 +1,8 @@
 package com.example.familyhelpuae.controller;
 
-
 import com.example.familyhelpuae.dto.LoginRequest;
 import com.example.familyhelpuae.dto.SignupRequest;
 import com.example.familyhelpuae.dto.UserResponse;
-import com.example.familyhelpuae.exception.EmailDublicationException;
 import com.example.familyhelpuae.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -16,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
@@ -25,10 +24,16 @@ public class AuthController {
         return "Welcome to Family Help UAE";
     }
 
-
     @PostMapping("/api/auth/signup")
-    public ResponseEntity<UserResponse> signup(@Valid @RequestBody SignupRequest signupRequest) throws EmailDublicationException {
-        return new ResponseEntity<>(authService.signup(signupRequest), HttpStatus.CREATED);
+    public ResponseEntity<?> signup(@Valid @RequestBody SignupRequest signupRequest) {
+        try {
+            // Now returns the full UserResponse (including token)
+            UserResponse response = authService.register(signupRequest);
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } catch (RuntimeException ex) {
+            // Returns a 400 Bad Request if the email is already in use
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        }
     }
 
     @PostMapping("/api/auth/login")

@@ -3,94 +3,101 @@ package com.example.familyhelpuae.service;
 import com.example.familyhelpuae.dto.LoginRequest;
 import com.example.familyhelpuae.dto.SignupRequest;
 import com.example.familyhelpuae.dto.UserResponse;
-import com.example.familyhelpuae.exception.EmailDublicationException;
 import com.example.familyhelpuae.model.Family;
 import com.example.familyhelpuae.model.User;
-import com.example.familyhelpuae.repository.FamilyRepository;
 import com.example.familyhelpuae.repository.UserRepository;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.Set;
+
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class AuthService {
-    private final JWTservice jwtService;
-    private final UserRepository userRepo;
-    private final FamilyRepository familyRepo;
+
+    private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
 
-    public AuthService(UserRepository userRepository, FamilyRepository familyRepository, JWTservice jwtService, PasswordEncoder passwordEncoder) {
-        this.userRepo = userRepository;
-        this.familyRepo = familyRepository;
-        this.jwtService = jwtService;
-        this.passwordEncoder = passwordEncoder; // Use the injected bean from your SecurityConfig
-    }
-
+    /**
+     * Handles new user registration, creates a family profile,
+     * and instantly logs them in by returning a UserResponse with a JWT.
+     */
     @Transactional
-    public UserResponse signup(SignupRequest request) throws EmailDublicationException {
-        if(userRepo.findByEmail(request.getEmail()).isPresent()){
-            throw new EmailDublicationException();
+    public UserResponse register(SignupRequest dto) {
+        // 1. Check if user already exists
+        if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+            throw new RuntimeException("Email is already registered.");
         }
 
-        Family family = familyRepo.findByFamilyName(request.getFamilyName())
-                .orElseGet(() -> {
-                    Family newFamily = new Family();
-                    newFamily.setFamilyName(request.getFamilyName());
-                    newFamily.setSize(1);
-                    newFamily.setReputationScore(0); // Initialize default values
-                    return familyRepo.save(newFamily);
-                });
+        // 2. Create the Family Profile
+        Family family = new Family();
+        family.setFamilyName(dto.getFamilyName());
+        family.setEmail(dto.getEmail());
+        family.setTrustScore(5.0); // Baseline trust score
+        family.setLastActive(LocalDateTime.now());
 
+        // 3. Create the User Account
         User user = new User();
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setEmail(dto.getEmail());
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        user.setRoles(Set.of("ROLE_USER"));
         user.setFamily(family);
 
-        User savedUser = userRepo.save(user);
-        String token = jwtService.generateToken(savedUser.getEmail());
+        // 4. Auto-verify the email to bypass the confirmation check
+        user.setEmailVerified(true);
+        user.setVerificationToken(null);
 
-        return mapToUserResponse(savedUser, token);
-    }
+        // Save to DB first to generate the ID for the user and family
+        userRepository.save(user);
 
-    public UserResponse login(LoginRequest request) {
-        User user = userRepo.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
+        // 5. Generate JWT Token instantly for the new user
+        String token = jwtService.generateToken(user);
 
-        if(!passwordEncoder.matches(request.getPassword(), user.getPassword())){
-            throw new BadCredentialsException("Invalid email or password");
-        }
-
-        String token = jwtService.generateToken(user.getEmail());
-        return mapToUserResponse(user, token);
+        // 6. Build and return the UserResponse DTO
+        return UserResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .token(token)
+                .familyId(user.getFamily().getId())
+                .familyName(user.getFamily().getFamilyName())
+                .build();
     }
 
     /**
-     * Retrieves the ID of the currently authenticated user from the Security Context.
+     * Handles login without checking for email verification.
      */
-    public Long getCurrentUserId() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepo.findByEmail(email)
-                .map(User::getId)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found in context"));
-    }
+    public UserResponse login(LoginRequest dto) {
+        // Find user
+        User user = userRepository.findByEmail(dto.getEmail())
+                .orElseThrow(() -> new RuntimeException("Invalid email or password."));
 
-    // Helper method to keep code DRY (Don't Repeat Yourself)
-    private UserResponse mapToUserResponse(User user, String token) {
-        Family family = user.getFamily();
+        // Standard Authentication
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword())
+        );
+
+        // Update last active status
+        user.getFamily().setLastActive(LocalDateTime.now());
+        userRepository.save(user);
+
+        // Generate and return JWT
+        String token = jwtService.generateToken(user);
+
         return UserResponse.builder()
-                .token(token)
                 .id(user.getId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
                 .email(user.getEmail())
-                .familyId(family.getId())
-                .familyName(family.getFamilyName())
-                .reputationScore(family.getReputationScore())
+                .token(token)
+                .familyId(user.getFamily().getId())
+                .familyName(user.getFamily().getFamilyName())
                 .build();
     }
 }
