@@ -2,12 +2,13 @@ package com.example.familyhelpuae.repository;
 
 import com.example.familyhelpuae.model.CommunityPost;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
-public interface CommunityPostRepository extends JpaRepository<CommunityPost, Long> {
+public interface CommunityPostRepository extends JpaRepository<CommunityPost, Long>, JpaSpecificationExecutor<CommunityPost> {
 
     // Finds everything, sorted newest first (for the "Everything" tab)
     List<CommunityPost> findAllByOrderByCreatedAtDesc();

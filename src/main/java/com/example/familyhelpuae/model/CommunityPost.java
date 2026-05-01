@@ -3,6 +3,8 @@ package com.example.familyhelpuae.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -31,12 +33,14 @@ public class CommunityPost {
     private String description;
 
     private String status = "OPEN"; // "OPEN", "IN_PROGRESS", "COMPLETED"
-    private Date createdAt = new Date();
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     // Specific to SEEK requests
     private String urgency;
-    private Date neededBy;
+    private LocalDateTime neededBy;
 
     // Specific to OFFER requests
     private String availability;
+
+    private int applicationCount = 0;
 }

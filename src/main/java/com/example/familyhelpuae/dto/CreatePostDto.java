@@ -2,7 +2,7 @@ package com.example.familyhelpuae.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Data
 public class CreatePostDto {
@@ -21,6 +21,6 @@ public class CreatePostDto {
 
     // Optional fields (Spring Boot will leave them null if not provided)
     private String urgency;
-    private Date neededBy;
+    private LocalDateTime neededBy;
     private String availability;
 }
