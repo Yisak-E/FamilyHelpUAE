@@ -1,19 +1,14 @@
 package com.example.familyhelpuae.service;
 
-import com.example.familyhelpuae.dto.CreateFeedbackDto;
 import com.example.familyhelpuae.model.CommunityPost;
 import com.example.familyhelpuae.model.Family;
 import com.example.familyhelpuae.model.Feedback;
-import com.example.familyhelpuae.model.User;
 import com.example.familyhelpuae.repository.CommunityPostRepository;
 import com.example.familyhelpuae.repository.FeedbackRepository;
 import com.example.familyhelpuae.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -22,58 +17,37 @@ public class FeedbackService {
     private final FeedbackRepository feedbackRepository;
     private final CommunityPostRepository postRepository;
     private final UserRepository userRepository;
+    private final TrustScoreService trustScoreService;
 
+    /**
+     * Processes new feedback: Analyzes sentiment, saves record, and updates Trust Score.
+     */
     @Transactional
-    public Feedback submitFeedback(CreateFeedbackDto dto, String reviewerEmail) {
-        // 1. Get the Post
-        CommunityPost post = postRepository.findById(dto.getPostId())
+    public void processFeedback(Long postId, String reviewerEmail, String comment, int rating) {
+        CommunityPost post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
-        // 2. Get the Reviewer Family (Logged in user)
-        User reviewerUser = userRepository.findByEmail(reviewerEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        Family reviewerFamily = reviewerUser.getFamily();
+        Family reviewer = userRepository.findByEmail(reviewerEmail).orElseThrow().getFamily();
 
-        // 3. Identify the Reviewed Family
-        // If the reviewer is the one who created the post, they are reviewing the helper.
-        // Otherwise, they are reviewing the post creator.
-        Family reviewedFamily = post.getFamily().equals(reviewerFamily)
-                ? identifyHelperFamily(post) // Logic to find who accepted the task
-                : post.getFamily();
+        // Identify the family being reviewed (if reviewer is creator, reviewed is the applicant, and vice-versa)
+        Family reviewedFamily = post.getFamily().equals(reviewer) ?
+                /* Logic to find the accepted applicant */ null : post.getFamily();
 
+        // 1. Analyze Sentiment using Stanford CoreNLP
+        double sentimentScore = trustScoreService.analyzeSentiment(comment);
+
+        // 2. Save Feedback Record
         Feedback feedback = new Feedback();
         feedback.setPost(post);
-        feedback.setReviewerFamily(reviewerFamily);
+        feedback.setReviewerFamily(reviewer);
         feedback.setReviewedFamily(reviewedFamily);
-        feedback.setRating(dto.getRating());
-        feedback.setComment(dto.getComment());
-        feedback.setCreatedAt(LocalDateTime.now());
+        feedback.setComment(comment);
+        feedback.setNumericalRating(rating);
+        feedback.setSentimentScore(sentimentScore);
 
-        // 4. Update Family Reputation Score
-        updateFamilyReputation(reviewedFamily, dto.getRating());
+        feedbackRepository.save(feedback);
 
-        return feedbackRepository.save(feedback);
-    }
-
-    public List<Feedback> getFeedbackForFamily(Long familyId) {
-        return feedbackRepository.findByReviewedFamilyIdOrderByCreatedAtDesc(familyId);
-    }
-
-    private void updateFamilyReputation(Family family, int newRating) {
-        double currentScore = family.getReputationScore();
-        int totalInteractions = family.getCompletedInteractions();
-
-        // Simple moving average for reputation
-        double newScore = ((currentScore * totalInteractions) + newRating) / (totalInteractions + 1);
-
-        family.setReputationScore(newScore);
-        family.setCompletedInteractions(totalInteractions + 1);
-        // familyRepository.save(family); // Ensure familyRepo is injected if needed
-    }
-
-    private Family identifyHelperFamily(CommunityPost post) {
-        // Implementation depends on how you track who accepted the task in TaskTransaction
-        // For now, returning a placeholder or finding the transaction
-        return null;
+        // 3. Trigger Trust Score Recalculation (Updates DB and Evicts Redis Cache)
+        trustScoreService.updateFamilyTrustScore(reviewedFamily.getId());
     }
 }

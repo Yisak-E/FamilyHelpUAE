@@ -1,74 +1,94 @@
 package com.example.familyhelpuae.service;
 
+import com.example.familyhelpuae.dto.CreatePostDto;
 import com.example.familyhelpuae.model.CommunityPost;
-import com.example.familyhelpuae.model.TaskTransaction;
+import com.example.familyhelpuae.model.Family;
 import com.example.familyhelpuae.repository.CommunityPostRepository;
-import com.example.familyhelpuae.repository.TaskTransactionRepository;
+import com.example.familyhelpuae.repository.FamilyRepository;
+import com.example.familyhelpuae.repository.UserRepository;
+import com.example.familyhelpuae.specification.CommunityPostSpecifications;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TaskService {
 
-    private final TaskTransactionRepository taskTransactionRepository;
-    private final CommunityPostRepository communityPostRepository;
+    private final CommunityPostRepository postRepository;
+    private final UserRepository userRepository;
+    private final FamilyRepository familyRepository;
+    private final EmailService emailService;
 
     @Transactional
-    public TaskTransaction acceptTask(Long postId) {
-        CommunityPost post = communityPostRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Community post not found"));
+    @CacheEvict(value = "communityFeed", allEntries = true) // Clear cache so feed updates
+    public CommunityPost createTask(CreatePostDto dto, String userEmail) {
+        Family family = userRepository.findByEmail(userEmail).orElseThrow().getFamily();
 
-        if (!post.getStatus().equals("OPEN")) {
-            throw new RuntimeException("This post is no longer available.");
+        CommunityPost post = new CommunityPost();
+        post.setFamily(family);
+        post.setPostType(dto.getPostType()); // "OFFER" or "SEEK"
+        post.setTitle(dto.getTitle());
+        post.setCategory(dto.getCategory());
+        post.setDescription(dto.getDescription());
+        post.setUrgency(dto.getUrgency());
+        post.setNeededBy(dto.getNeededBy());
+        post.setStatus("OPEN");
+
+        return postRepository.save(post);
+    }
+
+    /**
+     * Level C Security: Uses Specification to build query securely.
+     * Caches the result in Redis for high-performance feed scrolling.
+     */
+    @Cacheable(value = "communityFeed", key = "#type + '-' + #category + '-' + #status")
+    public List<CommunityPost> getFilteredTasks(String type, String category, String status) {
+        Specification<CommunityPost> spec = CommunityPostSpecifications.withFilters(type, category, status);
+        return postRepository.findAll(spec);
+    }
+
+
+    public CommunityPost getTaskById(Long taskId) {
+        return postRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+    }
+
+    @Transactional
+    @CacheEvict(value = {"communityFeed", "leaderboard"}, allEntries = true)
+    public void completeTask(Long taskId, String userEmail) {
+        CommunityPost post = postRepository.findById(taskId).orElseThrow();
+        Family requestingFamily = userRepository.findByEmail(userEmail).orElseThrow().getFamily();
+
+        // Security check: Only the post creator can mark it as complete
+        if (!post.getFamily().getId().equals(requestingFamily.getId())) {
+            throw new RuntimeException("Unauthorized: Only the creator can complete this task.");
         }
 
-        // 1. Update the Post status so others can't accept it
-        post.setStatus("IN_PROGRESS");
-        communityPostRepository.save(post);
-
-        // 2. Create the Task Transaction tracking record
-        TaskTransaction transaction = new TaskTransaction();
-        transaction.setPost(post);
-        transaction.setStatus("ACCEPTED");
-        transaction.setCreatedAt(LocalDateTime.now());
-        transaction.setUpdatedAt(LocalDateTime.now());
-
-        return taskTransactionRepository.save(transaction);
-    }
-
-    @Transactional
-    public TaskTransaction completeTask(Long postId) {
-        // Automatically finds the active task using the Post ID!
-        TaskTransaction transaction = taskTransactionRepository.findFirstByPostIdOrderByCreatedAtDesc(postId)
-                .orElseThrow(() -> new RuntimeException("Active task not found for this post"));
-
-        transaction.setStatus("COMPLETED");
-        transaction.setUpdatedAt(LocalDateTime.now());
-
-        CommunityPost post = transaction.getPost();
         post.setStatus("COMPLETED");
-        communityPostRepository.save(post);
+        postRepository.save(post);
 
-        return taskTransactionRepository.save(transaction);
+        // Update Reliability Metrics for the Algorithm
+        requestingFamily.setCompletedInteractions(requestingFamily.getCompletedInteractions() + 1);
+        familyRepository.save(requestingFamily);
+
+        // Send Email to remind them to leave a review (Feedback/NLP system)
+        try {
+            emailService.sendTaskCompletionEmail(
+                    requestingFamily.getEmail(),
+                    post.getTitle(),
+                    "your helper" // In a full implementation, you'd fetch the accepted applicant's name here
+            );
+        } catch (MessagingException e) {
+            log.error("Failed to send completion email", e);
+        }
     }
-
-    @Transactional
-    public TaskTransaction cancelTask(Long postId) {
-        TaskTransaction transaction = taskTransactionRepository.findFirstByPostIdOrderByCreatedAtDesc(postId)
-                .orElseThrow(() -> new RuntimeException("Active task not found for this post"));
-
-        transaction.setStatus("CANCELLED");
-        transaction.setUpdatedAt(LocalDateTime.now());
-
-        CommunityPost post = transaction.getPost();
-        post.setStatus("OPEN");
-        communityPostRepository.save(post);
-
-        return taskTransactionRepository.save(transaction);
-    }
-
 }

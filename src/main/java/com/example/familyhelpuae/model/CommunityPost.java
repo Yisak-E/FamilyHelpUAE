@@ -3,11 +3,12 @@ package com.example.familyhelpuae.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
-@Getter
-@Setter
+@Getter @Setter
 @Table(name = "community_posts")
 public class CommunityPost {
     @Id
@@ -15,28 +16,26 @@ public class CommunityPost {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "family_id", nullable = false)
-    private Family family;
+    @JoinColumn(name = "family_id")
+    private Family family; // The Post Creator
 
-    @Column(nullable = false)
     private String postType; // "OFFER" or "SEEK"
-
-    @Column(nullable = false)
     private String title;
-
-    @Column(nullable = false)
     private String category;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    private String status = "OPEN"; // "OPEN", "IN_PROGRESS", "COMPLETED"
-    private Date createdAt = new Date();
+    // "OPEN" (Accepting Apps), "IN_PROGRESS" (Helper Selected), "COMPLETED", "CANCELLED"
+    private String status = "OPEN";
 
-    // Specific to SEEK requests
+    // Counter updated by ApplicationService to show popular requests
+    private int applicationCount = 0;
+
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    // Specific Metadata for the Family Calendar grid
     private String urgency;
-    private Date neededBy;
-
-    // Specific to OFFER requests
     private String availability;
+    private LocalDateTime neededBy;
 }

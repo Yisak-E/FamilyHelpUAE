@@ -1,42 +1,85 @@
 package com.example.familyhelpuae.service;
 
+import com.example.familyhelpuae.model.User;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
 
 @Service
-public class JWTservice {
-    // Requirement: Secure communication. Use a key at least 256-bit long.
-    private static final String SECRET_STRING = "YourSuperSecretKeyThatMustBeAtLeast32CharactersLong!!";
-    private final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(SECRET_STRING.getBytes(StandardCharsets.UTF_8));
+public class JwtService {
 
-    public String generateToken(String email) {
-        return Jwts.builder()
-                .subject(email) // .setSubject() changed to .subject()
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + 86400000)) // 24h
-                .signWith(SECRET_KEY) // Algorithm is now inferred from the key type
+    // You should put this 256-bit key in your application.properties
+    @Value("${application.security.jwt.secret-key}")
+    private String secretKey;
+
+    @Value("${application.security.jwt.expiration}")
+    private long jwtExpiration;
+
+    public String extractUsername(String token) {
+        return extractClaim(token, Claims::getSubject);
+    }
+
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+        final Claims claims = extractAllClaims(token);
+        return claimsResolver.apply(claims);
+    }
+
+    public String generateToken(User user) {
+        Map<String, Object> extraClaims = new HashMap<>();
+        // Add family specific info to the token for the frontend to use immediately
+        extraClaims.put("familyName", user.getFamily().getFamilyName());
+        extraClaims.put("familyId", user.getFamily().getId());
+
+        return buildToken(extraClaims, user, jwtExpiration);
+    }
+
+    private String buildToken(Map<String, Object> extraClaims, User user, long expiration) {
+        return Jwts
+                .builder()
+                .setClaims(extraClaims)
+                .setSubject(user.getEmail())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSignInKey())
                 .compact();
     }
 
-    public String extractEmail(String token) {
-        return Jwts.parser()
-                .verifyWith(SECRET_KEY) // .setSigningKey() changed to .verifyWith()
-                .build()
-                .parseSignedClaims(token) // .parseClaimsJws() changed to .parseSignedClaims()
-                .getPayload()
-                .getSubject();
+    public boolean isTokenValid(String token, UserDetails userDetails) {
+        final String username = extractUsername(token);
+        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
     }
 
-    public boolean isTokenValid(String token) {
-        try {
-            Jwts.parser().verifyWith(SECRET_KEY).build().parseSignedClaims(token);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+    private boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
+    }
+
+    private Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
+    private Claims extractAllClaims(String token) {
+        return Jwts
+                .parser()
+                .verifyWith(getSignInKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    private SecretKey getSignInKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 }

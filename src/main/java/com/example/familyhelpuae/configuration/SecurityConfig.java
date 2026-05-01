@@ -21,6 +21,7 @@ public class SecurityConfig {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -29,7 +30,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/", "/api/auth/**").permitAll()
+                        .requestMatchers("/", "/api/auth/**", "/error").permitAll()
                         .anyRequest().authenticated()
                 )
 

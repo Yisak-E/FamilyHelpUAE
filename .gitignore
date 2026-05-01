@@ -1,4 +1,7 @@
+# Maven build output
 target/
+
+# Maven backup files
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
@@ -6,12 +9,25 @@ pom.xml.next
 release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
+
+# Maven wrapper
 .mvn/timing.properties
-# https://maven.apache.org/wrapper/#usage-without-binary-jar
 .mvn/wrapper/maven-wrapper.jar
 
-# Eclipse m2e generated files
-# Eclipse Core
+# Eclipse / IntelliJ / VS Code
 .project
-# JDT-specific (Eclipse Java Development Tools)
 .classpath
+.idea/
+*.iml
+.vscode/
+
+# Firebase service account (never commit this)
+src/main/resources/firebase-service-account.json
+
+# CoreNLP models (your huge JAR)
+src/main/resources/lib/
+src/main/resources/lib/*
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
