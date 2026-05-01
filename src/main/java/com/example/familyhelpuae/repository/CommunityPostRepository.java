@@ -5,7 +5,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
-@Repository
+import java.util.List;
+
 public interface CommunityPostRepository extends JpaRepository<CommunityPost, Long>, JpaSpecificationExecutor<CommunityPost> {
-    // JpaSpecificationExecutor allows for the Level C SQL Injection protection via Criteria API
+
+    // Finds posts by family ID and sorts them newest first
+    List<CommunityPost> findByFamilyIdOrderByCreatedAtDesc(Long familyId);
+
 }

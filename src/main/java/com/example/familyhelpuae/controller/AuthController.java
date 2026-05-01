@@ -28,7 +28,7 @@ public class AuthController {
     public ResponseEntity<?> signup(@Valid @RequestBody SignupRequest signupRequest) {
         try {
             // Now returns the full UserResponse (including token)
-            UserResponse response = authService.register(signupRequest);
+            UserResponse response = authService.signup(signupRequest);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (RuntimeException ex) {
             // Returns a 400 Bad Request if the email is already in use

@@ -1,9 +1,7 @@
 package com.example.familyhelpuae.service;
 
-import com.example.familyhelpuae.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,7 +9,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,11 +17,13 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    // You should put this 256-bit key in your application.properties
-    @Value("${application.security.jwt.secret-key}")
+    // You can set this in application.properties: application.security.jwt.secret-key
+    // Defaulting to a secure 256-bit hex string if not found in properties
+    @Value("${application.security.jwt.secret-key:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}")
     private String secretKey;
 
-    @Value("${application.security.jwt.expiration}")
+    // Default expiration: 24 hours (86400000 milliseconds)
+    @Value("${application.security.jwt.expiration:86400000}")
     private long jwtExpiration;
 
     public String extractUsername(String token) {
@@ -36,23 +35,20 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    public String generateToken(User user) {
-        Map<String, Object> extraClaims = new HashMap<>();
-        // Add family specific info to the token for the frontend to use immediately
-        extraClaims.put("familyName", user.getFamily().getFamilyName());
-        extraClaims.put("familyId", user.getFamily().getId());
-
-        return buildToken(extraClaims, user, jwtExpiration);
+    public String generateToken(UserDetails userDetails) {
+        return generateToken(new HashMap<>(), userDetails);
     }
 
-    private String buildToken(Map<String, Object> extraClaims, User user, long expiration) {
-        return Jwts
-                .builder()
-                .setClaims(extraClaims)
-                .setSubject(user.getEmail())
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(getSignInKey())
+    public String generateToken(
+            Map<String, Object> extraClaims,
+            UserDetails userDetails
+    ) {
+        return Jwts.builder()
+                .claims(extraClaims)
+                .subject(userDetails.getUsername())
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .signWith(getSignInKey(), Jwts.SIG.HS256)
                 .compact();
     }
 
@@ -70,9 +66,8 @@ public class JwtService {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts
-                .parser()
-                .verifyWith(getSignInKey())
+        return Jwts.parser()
+                .verifyWith(getSignInKey()) // Modern jjwt 0.12.x syntax
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
