@@ -6,33 +6,30 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Getter
-@Setter
+@Getter @Setter
 public class Feedback {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 1. Link directly to the unified CommunityPost instead of TaskTransaction
-    // This supports your "One ID to rule them all" logic
     @ManyToOne
-    @JoinColumn(name = "post_id", nullable = false)
+    @JoinColumn(name = "post_id")
     private CommunityPost post;
 
-    // 2. Clearer naming for the Family relationships
     @ManyToOne
-    @JoinColumn(name = "reviewer_family_id", nullable = false)
+    @JoinColumn(name = "reviewer_family_id")
     private Family reviewerFamily;
 
     @ManyToOne
-    @JoinColumn(name = "reviewed_family_id", nullable = false)
+    @JoinColumn(name = "reviewed_family_id")
     private Family reviewedFamily;
 
-    private int rating;
+    private int numericalRating; // 1-5 Star UI input
 
     @Column(columnDefinition = "TEXT")
-    private String comment;
+    private String comment; // Analyzed by CoreNLP
 
-    // 3. Use LocalDateTime for consistency with TaskTransaction
+    private double sentimentScore; // 1-10 result from TrustScoreService
+
     private LocalDateTime createdAt = LocalDateTime.now();
 }

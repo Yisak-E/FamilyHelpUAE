@@ -1,39 +1,39 @@
 package com.example.familyhelpuae.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Setter;
 import lombok.Getter;
-import java.util.Date;
-import java.util.List;
+
+import java.time.LocalDateTime;
+
 
 @Entity
-@Table(name = "families")
-@Getter
-@Setter
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@Getter @Setter
 public class Family {
-  
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
-    @JsonIgnoreProperties({"offers", "requests", "members"})
-    @OneToMany(mappedBy = "family", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JsonIgnore
-    private List<User> members ;
-  
-    @Column(unique = true, nullable = false)
     private String familyName;
+    private String email;
 
-    private int size;
-    private double reputationScore = 0.0;
+    // --- Trust Score Metrics ---
+    // The 1-10 result from the TrustScoreService
+    private double trustScore = 5.0;
+
+    // Reliability counters for the algorithm
     private int completedInteractions = 0;
-    private String address;
+    private int cancelledInteractions = 0;
 
-    @Version
-    private Long version;
+    // Engagement tracking for the logarithmic weight
+    private int totalApplicationsSent = 0;
+    private LocalDateTime lastActive;
 
+    // FCM Token for Push Notifications
+    private String firebaseToken;
+
+    @JsonIgnore
+    @OneToOne(mappedBy = "family")
+    private User user;
 }
