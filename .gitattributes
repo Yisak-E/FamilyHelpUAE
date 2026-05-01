@@ -2,3 +2,6 @@
 *.cmd text eol=crlf
 
 /src/main/resource/
+
+src/main/resources/lib/stanford-corenlp-4.5.4-models.jar
+
