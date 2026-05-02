@@ -1,5 +1,6 @@
 package com.example.familyhelpuae.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -44,11 +45,13 @@ public class Family {
     // A family can have multiple users (e.g., parents, older children)
     @OneToMany(mappedBy = "family", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
+    @JsonIgnore
     private List<User> members;
 
     // A family can create many community posts
     @OneToMany(mappedBy = "family", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
+    @JsonIgnore
     private List<CommunityPost> posts;
 
     @Column(nullable = false, unique = true)
@@ -57,5 +60,4 @@ public class Family {
     @Column(nullable = false)
     private java.time.LocalDateTime lastActive;
 
-    private String phoneNumber;
 }

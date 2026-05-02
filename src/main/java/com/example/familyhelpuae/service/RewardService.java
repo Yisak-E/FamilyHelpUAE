@@ -2,9 +2,12 @@
 package com.example.familyhelpuae.service;
 
 import com.example.familyhelpuae.dto.LeaderboardResponse;
+import com.example.familyhelpuae.exception.FamilyNotFoundException;
 import com.example.familyhelpuae.model.Family;
 import com.example.familyhelpuae.repository.FamilyRepository;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
+import org.springframework.aop.ThrowsAdvice;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -35,5 +38,19 @@ public class RewardService {
                         .lastActive(family.getLastActive())
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    public LeaderboardResponse getMine(String familyI) throws FamilyNotFoundException {
+        Family mine = familyRepo.findById(Long.parseLong(familyI)).orElseGet(()->null);
+
+        if(mine==null){
+            throw new FamilyNotFoundException("Your family does not exist");
+        }
+        return LeaderboardResponse.builder()
+                .familyName(mine.getFamilyName())
+                .trustScore(mine.getTrustScore())
+                .completedInteractions(mine.getCompletedInteractions())
+                .lastActive(mine.getLastActive())
+                .build();
     }
 }

@@ -3,8 +3,10 @@ package com.example.familyhelpuae.controller;
 import com.example.familyhelpuae.dto.LeaderboardResponse;
 import com.example.familyhelpuae.service.RewardService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
@@ -18,5 +20,17 @@ public class RewardController {
     @GetMapping("/leaderboard")
     public ResponseEntity<List<LeaderboardResponse>> getLeaderboard() {
         return ResponseEntity.ok(rewardService.getLeaderboard());
+    }
+
+
+    @GetMapping("/mine/{familyId}")
+    public ResponseEntity<?> getMine( @PathVariable String familyId) {
+        try{
+            return ResponseEntity.ok(rewardService.getMine(familyId));
+        }
+        catch(Exception e){
+            return ResponseEntity.badRequest().build();
+        }
+
     }
 }

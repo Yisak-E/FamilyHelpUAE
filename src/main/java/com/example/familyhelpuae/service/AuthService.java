@@ -1,12 +1,15 @@
 package com.example.familyhelpuae.service;
 
+import com.example.familyhelpuae.FamilyHelpUaeApplication;
 import com.example.familyhelpuae.dto.LoginRequest;
 import com.example.familyhelpuae.dto.SignupRequest;
 import com.example.familyhelpuae.dto.UserResponse;
+import com.example.familyhelpuae.exception.EmailDublicationException;
 import com.example.familyhelpuae.model.Family;
 import com.example.familyhelpuae.model.User;
 import com.example.familyhelpuae.repository.FamilyRepository;
 import com.example.familyhelpuae.repository.UserRepository;
+import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -16,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -29,26 +33,37 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     @Transactional
-    public UserResponse signup(SignupRequest dto) {
-        // 1. Check if user already exists
+    public UserResponse signup(SignupRequest dto) throws EmailDublicationException {
+
+        //1. check if the email exist
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
-            throw new RuntimeException("Email is already registered.");
+            throw new EmailDublicationException();
         }
 
-        // 2. Create the Family Profile
-        Family family = new Family();
-        family.setFamilyName(dto.getFamilyName());
-        family.setEmail(dto.getEmail());
-        family.setAddress(dto.getAddress());
-        family.setFamilySize(dto.getFamilySize());
-        family.setTrustScore(5.0); // Baseline trust score
-        family.setLastActive(LocalDateTime.now());
+        // 2. check if the family exists
+
+        Family family = familyRepository.findByFamilyName(dto.getFamilyName()).orElse(null);
+
+        if (family == null) {
+            new Family();
+            family = Family.builder()
+                    .familyName(dto.getFamilyName())
+                    .email(dto.getEmail())
+                    .address(dto.getAddress())
+                    .familySize(dto.getFamilySize())
+                    .trustScore(5.0)
+                    .completedInteractions(0)
+                    .cancelledInteractions(0)
+                    .lastActive(LocalDateTime.now())
+                    .build();
+        }
+
 
         // 3. Create the User Account
         User user = new User();
         user.setEmail(dto.getEmail());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        user.setRoles(Set.of("ROLE_USER"));
+        user.setRoles(Set.of("ROLE_USER", dto.getRole()));
         user.setFamily(family);
         user.setFirstName(dto.getFirstName());
         user.setLastName(dto.getLastName());
@@ -58,20 +73,10 @@ public class AuthService {
         User savedUser = userRepository.save(user);
 
         // 4. Generate JWT
-        String token = jwtService.generateToken((UserDetails) savedUser);
+        String token = jwtService.generateToken(savedUser);
 
         // 5. Return UserResponse
-        return UserResponse.builder()
-                .id(savedUser.getId())
-                .email(savedUser.getEmail())
-                .token(token)
-                .familyId(savedUser.getFamily().getId())
-                .familyName(savedUser.getFamily().getFamilyName())
-                .address(savedUser.getFamily().getAddress())
-                .trustScore(savedUser.getFamily().getTrustScore())
-                .completedInteractions(savedUser.getFamily().getCompletedInteractions())
-                .cancelledInteractions(savedUser.getFamily().getCancelledInteractions())
-                .build();
+        return getBuild(savedUser, token);
     }
 
     public UserResponse login(LoginRequest request) {
@@ -88,13 +93,18 @@ public class AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
 
         // 3. Generate a new JWT token
-        String jwtToken = jwtService.generateToken((UserDetails) user);
-
+        String jwtToken = jwtService.generateToken(user);
         // 4. Return the comprehensive UserResponse
+        return getBuild(user, jwtToken);
+    }
+
+    private static UserResponse getBuild(User user, String jwtToken) {
         return UserResponse.builder()
                 .id(user.getId())
                 .email(user.getEmail())
-                .token(jwtToken)
+                .role(user.getRoles().iterator().next())
+                .accessToken(jwtToken)
+                .refreshToken(jwtToken)
                 .familyId(user.getFamily().getId())
                 .familyName(user.getFamily().getFamilyName())
                 .address(user.getFamily().getAddress())
@@ -103,6 +113,17 @@ public class AuthService {
                 .cancelledInteractions(user.getFamily().getCancelledInteractions())
                 .build();
     }
+
+
+    public List<User> allUser() {
+        return userRepository.findAll();
+    }
+    
+    public List<Family> allFamilies() {
+        return familyRepository.findAll();
+    }
+    
+    
 
 
 }

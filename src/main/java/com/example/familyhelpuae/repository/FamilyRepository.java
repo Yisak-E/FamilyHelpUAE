@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface FamilyRepository extends JpaRepository<Family,Long> {
     Optional<Family> findByFamilyName(String family_name);
+
 }

@@ -12,7 +12,8 @@ import lombok.NoArgsConstructor;
 public class UserResponse {
     private Long id;
     private String email;
-    private String token;
+    private String accessToken;
+    private String refreshToken;
     private String role;
 
     // Family specific details
